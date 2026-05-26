@@ -1,0 +1,598 @@
+# EU Financial Reg Horizon Scanner
+# Classification taxonomy
+#
+# Five axes drive every classification: regulation_family, activity,
+# licence_type, topic, jurisdiction. Every Classification record stores
+# the version below for reproducibility.
+
+version: "2026.05.20"
+maintainer: "Sebastian Foerste"
+review_cadence: "weekly during build phase, monthly after month 6"
+
+# ---------------------------------------------------------------------------
+# Axis 1: Regulation family
+# Each family lists primary instrument plus Level 2 and Level 3 measures.
+# ---------------------------------------------------------------------------
+regulation_family:
+
+  micar:
+    long_name: "Markets in Crypto-Assets Regulation"
+    primary: "Regulation (EU) 2023/1114"
+    level_2:
+      - "Delegated Regulations on white papers, marketing, market abuse"
+      - "RTS on authorisation, conflicts of interest, complaints handling"
+      - "RTS on own funds, recovery plans, redemption plans for issuers"
+    level_3:
+      - "ESMA Guidelines on suitability, custody, trading"
+      - "EBA Guidelines on liquidity stress testing, recovery plans"
+      - "EBA and ESMA Q&As"
+    sub_topics:
+      - art_issuance
+      - emt_issuance
+      - casp_authorisation
+      - white_paper
+      - marketing_communications
+      - market_abuse_crypto
+      - custody_safekeeping
+      - operation_of_trading_platform
+      - exchange_services
+      - execution_of_orders
+      - placing
+      - reception_and_transmission
+      - advice_on_crypto
+      - portfolio_management_crypto
+      - transfer_services
+
+  dora:
+    long_name: "Digital Operational Resilience Act"
+    primary: "Regulation (EU) 2022/2554"
+    level_2:
+      - "RTS on ICT risk management framework"
+      - "RTS on classification of major ICT-related incidents"
+      - "RTS on register of information for ICT third-party arrangements"
+      - "RTS on threat-led penetration testing"
+      - "RTS on subcontracting of critical or important functions"
+    level_3:
+      - "ESA Joint Guidelines on estimation of aggregated annual costs and losses"
+      - "Oversight forum outputs on critical ICT third-party providers"
+    sub_topics:
+      - ict_risk_management
+      - incident_reporting
+      - resilience_testing
+      - tlpt
+      - third_party_risk
+      - critical_function_classification
+      - subcontracting
+      - register_of_information
+      - oversight_ctpp
+
+  mifid:
+    long_name: "Markets in Financial Instruments Directive and Regulation"
+    primary: "Directive 2014/65/EU and Regulation (EU) 600/2014"
+    sub_topics:
+      - authorisation_investment_firm
+      - conduct_of_business
+      - product_governance
+      - inducements
+      - best_execution
+      - transaction_reporting
+      - market_structure
+      - systematic_internaliser
+      - investor_protection
+      - cross_border_passporting
+
+  prudential_banks:
+    long_name: "CRR / CRD / BRRD"
+    primary:
+      - "Regulation (EU) 575/2013"
+      - "Directive 2013/36/EU"
+      - "Directive 2014/59/EU"
+    sub_topics:
+      - capital_requirements
+      - liquidity_lcr_nsfr
+      - leverage_ratio
+      - large_exposures
+      - srep
+      - resolution_planning
+      - mrel
+      - basel_iii_iv_implementation
+
+  prudential_investment_firms:
+    long_name: "IFR / IFD"
+    primary:
+      - "Regulation (EU) 2019/2033"
+      - "Directive (EU) 2019/2034"
+    sub_topics:
+      - class_1_2_3_classification
+      - k_factors
+      - own_funds
+      - remuneration
+      - icaap_iliad
+
+  psd:
+    long_name: "Payment Services Directive / PSR"
+    primary:
+      - "Directive (EU) 2015/2366 (PSD2)"
+      - "PSD3 proposal COM/2023/366"
+      - "PSR proposal COM/2023/367"
+    sub_topics:
+      - psp_authorisation
+      - sca
+      - open_banking_apis
+      - fraud_prevention
+      - liability_allocation
+      - confirmation_of_payee
+      - cross_border_payments
+
+  emd:
+    long_name: "E-Money Directive / planned merger with PSD3"
+    primary: "Directive 2009/110/EC"
+    sub_topics:
+      - emi_authorisation
+      - safeguarding
+      - own_funds_emi
+      - redemption_rights
+
+  mar:
+    long_name: "Market Abuse Regulation"
+    primary: "Regulation (EU) 596/2014"
+    sub_topics:
+      - insider_dealing
+      - market_manipulation
+      - disclosure_of_inside_information
+      - managers_transactions
+      - suspicious_transaction_reporting
+
+  aml:
+    long_name: "AML Package (AMLR, AMLD6, AMLA)"
+    primary:
+      - "Regulation (EU) 2024/1624 (AMLR)"
+      - "Directive (EU) 2024/1640 (AMLD6)"
+      - "Regulation (EU) 2024/1620 (AMLA)"
+    sub_topics:
+      - cdd
+      - beneficial_ownership
+      - sar_str
+      - tfr_travel_rule
+      - high_risk_third_countries
+      - sanctions_screening
+      - amla_direct_supervision
+
+  tfr:
+    long_name: "Transfer of Funds Regulation"
+    primary: "Regulation (EU) 2023/1113"
+    sub_topics:
+      - travel_rule_crypto
+      - self_hosted_wallets
+      - originator_beneficiary_info
+
+  sanctions:
+    long_name: "EU restrictive measures framework"
+    primary: "Various Council Regulations and Decisions"
+    sub_topics:
+      - asset_freeze
+      - sectoral_sanctions
+      - russia_belarus_packages
+      - sanctions_circumvention
+      - reporting_obligations
+
+  gdpr:
+    long_name: "General Data Protection Regulation"
+    primary: "Regulation (EU) 2016/679"
+    sub_topics:
+      - lawful_basis
+      - data_subject_rights
+      - cross_border_transfers
+      - dpia
+      - breach_notification
+
+  ai_act:
+    long_name: "AI Act"
+    primary: "Regulation (EU) 2024/1689"
+    sub_topics:
+      - prohibited_practices
+      - high_risk_systems
+      - gpai_obligations
+      - sandbox
+
+  bmr:
+    long_name: "Benchmarks Regulation"
+    primary: "Regulation (EU) 2016/1011"
+    sub_topics:
+      - administrator_authorisation
+      - critical_benchmarks
+      - third_country_benchmarks
+
+  sfdr_taxonomy:
+    long_name: "Sustainable Finance Disclosure Regulation and EU Taxonomy"
+    primary:
+      - "Regulation (EU) 2019/2088"
+      - "Regulation (EU) 2020/852"
+    sub_topics:
+      - article_8_9_products
+      - pai_indicators
+      - taxonomy_alignment
+      - csrd_interplay
+
+  emir:
+    long_name: "European Market Infrastructure Regulation"
+    primary: "Regulation (EU) 648/2012"
+    sub_topics:
+      - clearing_obligation
+      - margin_requirements
+      - reporting
+      - emir_3_active_account
+
+  csdr:
+    long_name: "Central Securities Depositories Regulation"
+    primary: "Regulation (EU) 909/2014"
+    sub_topics:
+      - settlement_discipline
+      - csd_authorisation
+      - t_plus_1_migration
+
+  prospectus_listing:
+    long_name: "Prospectus Regulation / Listing Act"
+    primary: "Regulation (EU) 2017/1129"
+    sub_topics:
+      - prospectus_exemptions
+      - eu_growth_prospectus
+      - tokenised_securities_offering
+      - listing_act_2024_reforms
+
+  mica_for_securities:
+    long_name: "DLT Pilot Regime"
+    primary: "Regulation (EU) 2022/858"
+    sub_topics:
+      - dlt_mtf
+      - dlt_ss
+      - dlt_tss
+
+# ---------------------------------------------------------------------------
+# Axis 2: Activity
+# What the regulated entity actually does. Multiple activities per entity.
+# ---------------------------------------------------------------------------
+activity:
+  - custody_safekeeping_crypto
+  - custody_safekeeping_securities
+  - exchange_crypto_for_fiat
+  - exchange_crypto_for_crypto
+  - operation_of_trading_venue
+  - execution_of_orders
+  - reception_and_transmission_of_orders
+  - placing_with_firm_commitment
+  - placing_without_firm_commitment
+  - investment_advice
+  - portfolio_management
+  - transfer_services_crypto
+  - issuance_of_emt
+  - issuance_of_art
+  - issuance_of_other_crypto_assets
+  - issuance_of_securities
+  - tokenisation_of_rwa
+  - staking_delegated
+  - staking_liquid
+  - lending_crypto
+  - borrowing_crypto
+  - payment_initiation
+  - account_information
+  - issuance_of_payment_instruments
+  - acquiring
+  - money_remittance
+  - issuance_of_e_money
+  - deposit_taking
+  - lending_fiat
+  - benchmark_administration
+  - rating_provision
+  - clearing
+  - settlement
+  - reference_data_provision
+
+# ---------------------------------------------------------------------------
+# Axis 3: Licence type
+# The supervisory category the entity falls into.
+# ---------------------------------------------------------------------------
+licence_type:
+  - casp_micar
+  - art_issuer_micar
+  - emt_issuer_micar
+  - credit_institution_crr
+  - investment_firm_class_1
+  - investment_firm_class_2
+  - investment_firm_class_3
+  - emi_emd
+  - payment_institution_psd
+  - registered_account_information_service_provider
+  - aifm
+  - ucits_mancom
+  - mtf_operator
+  - otf_operator
+  - regulated_market_operator
+  - ccp
+  - csd
+  - benchmark_administrator
+  - dlt_market_infrastructure
+  - insurance_undertaking
+  - reinsurance_undertaking
+  - mortgage_credit_intermediary
+  - crowdfunding_service_provider_ecsp
+  - none_unregulated
+
+# ---------------------------------------------------------------------------
+# Axis 4: Topic
+# Cross-cutting themes. Useful for portfolio queries.
+# ---------------------------------------------------------------------------
+topic:
+  authorisation_and_passporting:
+    - initial_authorisation
+    - change_of_control
+    - withdrawal_of_authorisation
+    - passporting_notification
+    - third_country_access
+  prudential:
+    - own_funds
+    - liquidity
+    - leverage
+    - large_exposures
+    - icaap_iliad_srep
+    - recovery_and_resolution
+  conduct:
+    - investor_protection
+    - product_governance
+    - inducements_and_research
+    - best_execution
+    - complaints_handling
+    - marketing_and_advertising
+    - vulnerable_customers
+  market_integrity:
+    - insider_dealing
+    - market_manipulation
+    - benchmark_manipulation
+    - short_selling
+  aml_cft_sanctions:
+    - cdd_kyc
+    - travel_rule
+    - beneficial_ownership
+    - sar_str
+    - sanctions_screening
+    - amla_supervision
+  ict_and_resilience:
+    - ict_risk_management
+    - incident_reporting
+    - third_party_arrangements
+    - tlpt
+    - business_continuity
+    - cyber_threat_intelligence
+  outsourcing_and_governance:
+    - outsourcing_arrangements
+    - cloud_outsourcing
+    - critical_function_classification
+    - fit_and_proper
+    - board_composition
+    - remuneration
+  reporting:
+    - transaction_reporting
+    - prudential_reporting
+    - statistical_reporting
+    - micar_reporting
+    - csrd_sustainability_reporting
+  consumer_protection:
+    - retail_disclosure
+    - distance_marketing
+    - cross_selling
+    - complaints
+    - product_intervention
+  market_infrastructure:
+    - clearing
+    - settlement
+    - reference_data
+    - trade_repositories
+  sustainable_finance:
+    - sfdr_disclosures
+    - taxonomy_alignment
+    - transition_finance
+    - greenwashing_enforcement
+  digital_assets_specific:
+    - white_paper_review
+    - stablecoin_reserves
+    - market_abuse_crypto
+    - staking_classification
+    - defi_assessment
+    - nft_classification
+    - tokenisation_securities
+
+# ---------------------------------------------------------------------------
+# Axis 5: Jurisdiction
+# Source authority and territorial scope of the publication.
+# ---------------------------------------------------------------------------
+jurisdiction:
+  eu_level:
+    - european_commission
+    - european_parliament
+    - council_of_the_eu
+    - european_central_bank
+    - ecb_banking_supervision_ssm
+    - srb
+    - esma
+    - eba
+    - eiopa
+    - joint_committee_esas
+    - amla
+    - court_of_justice_eu
+    - european_data_protection_board
+  member_states:
+    de:
+      - bafin
+      - bundesbank
+      - bmf
+      - bmwk
+    at:
+      - fma
+      - oenb
+    lu:
+      - cssf
+      - bcl
+    fr:
+      - acpr
+      - amf
+    nl:
+      - dnb
+      - afm
+    ie:
+      - cbi
+    mt:
+      - mfsa
+    cy:
+      - cysec
+    it:
+      - banca_d_italia
+      - consob
+    es:
+      - banco_de_espana
+      - cnmv
+    se:
+      - finansinspektionen
+    dk:
+      - finanstilsynet
+    pl:
+      - knf
+    be:
+      - nbb
+      - fsma
+    pt:
+      - bdp
+      - cmvm
+    fi:
+      - fin_fsa
+    cz:
+      - cnb
+    other_eu: []
+  efta:
+    - finma_ch
+    - liechtenstein_fma
+    - norway_fsa
+    - iceland_fsa
+  uk_post_brexit:
+    - fca
+    - pra
+    - boe
+  international:
+    - fatf
+    - fsb
+    - bis_bcbs
+    - iosco
+    - ifrs_foundation
+
+# ---------------------------------------------------------------------------
+# Publication type
+# Used to weight urgency. Final RTS scores higher than consultation.
+# ---------------------------------------------------------------------------
+publication_type:
+  binding:
+    - regulation_final
+    - directive_final
+    - delegated_regulation_final
+    - implementing_regulation_final
+    - rts_final
+    - its_final
+    - national_law_final
+    - allgemeinverfuegung
+    - administrative_decision
+  near_binding:
+    - guidelines_final
+    - recommendation_final
+    - opinion_published
+    - q_and_a_published
+    - merkblatt
+    - rundschreiben
+  consultative:
+    - consultation_paper
+    - discussion_paper
+    - call_for_advice
+    - call_for_evidence
+    - draft_rts
+    - draft_its
+    - draft_guidelines
+  soft_law_and_signals:
+    - press_release
+    - speech
+    - newsletter
+    - thematic_review_findings
+    - dear_ceo_letter
+    - supervisory_briefing
+    - enforcement_decision
+    - sanction_published
+  case_law:
+    - cjeu_judgment
+    - cjeu_opinion_ag
+    - bverwg_judgment
+    - bgh_judgment
+    - olg_judgment
+    - admin_court_judgment
+
+# ---------------------------------------------------------------------------
+# Urgency weighting
+# Multiplier applied during impact scoring.
+# ---------------------------------------------------------------------------
+urgency_weights:
+  binding: 1.0
+  near_binding: 0.8
+  consultative: 0.5
+  soft_law_and_signals: 0.4
+  case_law: 0.7
+
+# ---------------------------------------------------------------------------
+# Service offering mapping
+# Every classification can route to a fixed-fee gunnercooke package.
+# Update as the service catalogue evolves.
+# ---------------------------------------------------------------------------
+service_offerings:
+  - id: gc_micar_authorisation
+    name: "MiCAR CASP / ART / EMT authorisation package"
+    triggers:
+      regulation_family: [micar]
+      topic: [authorisation_and_passporting]
+    price_indication: "fixed fee from EUR 35.000"
+  - id: gc_micar_white_paper
+    name: "MiCAR white paper drafting and notification"
+    triggers:
+      regulation_family: [micar]
+      topic: [digital_assets_specific.white_paper_review]
+    price_indication: "fixed fee from EUR 12.000"
+  - id: gc_dora_register
+    name: "DORA register of information build and review"
+    triggers:
+      regulation_family: [dora]
+      topic: [ict_and_resilience.third_party_arrangements]
+    price_indication: "fixed fee from EUR 18.000"
+  - id: gc_dora_incident_playbook
+    name: "DORA incident reporting playbook"
+    triggers:
+      regulation_family: [dora]
+      topic: [ict_and_resilience.incident_reporting]
+    price_indication: "fixed fee from EUR 9.000"
+  - id: gc_aml_package
+    name: "AML / AMLR readiness assessment"
+    triggers:
+      regulation_family: [aml, tfr]
+    price_indication: "fixed fee from EUR 14.000"
+  - id: gc_psd_licence
+    name: "PI / EMI authorisation package"
+    triggers:
+      regulation_family: [psd, emd]
+      topic: [authorisation_and_passporting]
+    price_indication: "fixed fee from EUR 28.000"
+  - id: gc_tokenisation_legal_opinion
+    name: "Tokenised RWA legal opinion and structuring"
+    triggers:
+      activity: [tokenisation_of_rwa, issuance_of_securities]
+    price_indication: "fixed fee from EUR 22.000"
+  - id: gc_sanctions_compliance
+    name: "EU sanctions compliance review"
+    triggers:
+      regulation_family: [sanctions]
+    price_indication: "fixed fee from EUR 8.000"
+  - id: gc_regulatory_strategy_retainer
+    name: "Quarterly regulatory strategy retainer"
+    triggers: {}
+    price_indication: "monthly retainer from EUR 4.500"

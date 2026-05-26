@@ -1,0 +1,39 @@
+version: "2026.05.20-mvp"
+maintainer: "Sebastian Foerste"
+
+weights:
+  licence_match: 45
+  activity_overlap: 18
+  jurisdiction_home_match: 18
+  jurisdiction_passported_match: 10
+  topic_watchlist_match: 12
+  critical_product_line_bonus: 7
+
+publication_type_floor:
+  regulation_final: 70
+  directive_final: 70
+  delegated_regulation_final: 70
+  implementing_regulation_final: 70
+  rts_final: 68
+  its_final: 68
+  guidelines_final: 60
+  q_and_a_published: 55
+  consultation_paper: 35
+  draft_rts: 38
+  draft_its: 38
+  press_release: 20
+
+buckets:
+  critical: 85
+  high: 70
+  medium: 45
+  low: 15
+
+topic_watchlist:
+  - authorisation_and_passporting.initial_authorisation
+  - authorisation_and_passporting.change_of_control
+  - digital_assets_specific.white_paper_review
+  - ict_and_resilience.incident_reporting
+  - ict_and_resilience.third_party_arrangements
+  - aml_cft_sanctions.travel_rule
+  - conduct.complaints_handling

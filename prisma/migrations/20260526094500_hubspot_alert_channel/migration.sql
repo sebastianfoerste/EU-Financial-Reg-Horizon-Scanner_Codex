@@ -1,0 +1,1 @@
+ALTER TYPE "AlertChannel" ADD VALUE 'HUBSPOT';

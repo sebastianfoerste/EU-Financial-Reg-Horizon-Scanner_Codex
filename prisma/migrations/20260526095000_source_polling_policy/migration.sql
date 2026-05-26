@@ -1,0 +1,1 @@
+ALTER TYPE "FetchStatus" ADD VALUE 'SKIPPED';

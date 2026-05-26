@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <title>European Securities and Markets Authority</title>
+    <link>https://www.esma.europa.eu/</link>
+    <description>ESMA publications</description>
+    <item>
+      <title>ESMA publishes MiCA Q&amp;A on white paper modifications</title>
+      <link>https://www.esma.europa.eu/esma-qa-search-page/all/mica-white-paper-modifications</link>
+      <description><![CDATA[<p>ESMA has clarified a MiCA white paper filing question for crypto-asset issuers.</p>]]></description>
+      <pubDate>Tue, 12 May 2026 12:00:00 +0200</pubDate>
+      <guid isPermaLink="true">https://www.esma.europa.eu/esma-qa-search-page/all/mica-white-paper-modifications</guid>
+    </item>
+  </channel>
+</rss>

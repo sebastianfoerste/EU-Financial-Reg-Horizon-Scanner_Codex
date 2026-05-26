@@ -1,0 +1,804 @@
+// EU Financial Reg Horizon Scanner
+// Prisma schema for Postgres
+//
+// Conventions
+// - All primary keys are cuid().
+// - All timestamps in UTC.
+// - Soft-delete via deletedAt where applicable.
+// - Vector storage via pgvector extension (column type Unsupported).
+// - Taxonomy fields stored as String enums validated at app level against
+//   the versioned taxonomy.yaml, so the schema does not change when the
+//   taxonomy evolves.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector"), pg_trgm]
+}
+
+// ---------------------------------------------------------------------------
+// Identity and tenancy
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  locale        String         @default("en")
+  authProvider  String         @default("clerk")
+  externalId    String?        @unique
+  isInternalOperator Boolean   @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  memberships   Membership[]
+  alertReads    AlertRead[]
+  apiTokens     ApiToken[]
+
+  @@index([email])
+}
+
+model Organisation {
+  id              String         @id @default(cuid())
+  externalId      String?        @unique
+  name            String
+  legalName       String?
+  registeredSeat  String?
+  vatId           String?
+  primaryContact  String?
+  tier            SubscriptionTier @default(TRIAL)
+  trialEndsAt     DateTime?
+  hubspotCompanyId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  memberships     Membership[]
+  productMaps     ProductMap[]
+  impactScores    ImpactScore[]
+  alerts          Alert[]
+  serviceLeads   ServiceLead[]
+  subscriptions   Subscription[]
+  apiTokens       ApiToken[]
+  savedViews      SavedView[]
+  integrationConfigs IntegrationConfig[]
+
+  @@index([name])
+}
+
+enum SubscriptionTier {
+  TRIAL
+  SOLO
+  BOUTIQUE
+  ENTERPRISE
+  CUSTOM
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  organisationId String
+  role           OrgRole      @default(MEMBER)
+  createdAt      DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+  @@index([organisationId])
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  READ_ONLY
+}
+
+model Subscription {
+  id              String       @id @default(cuid())
+  organisationId  String
+  tier            SubscriptionTier
+  status          SubscriptionStatus @default(ACTIVE)
+  startedAt       DateTime
+  renewsAt        DateTime?
+  cancelledAt     DateTime?
+  monthlyPriceEur Decimal      @db.Decimal(10, 2)
+  seatCount       Int
+  stripeSubId     String?      @unique
+  createdAt       DateTime     @default(now())
+
+  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  PAUSED
+}
+
+model ApiToken {
+  id             String       @id @default(cuid())
+  tokenHash      String       @unique
+  prefix         String
+  organisationId String
+  createdById    String
+  scopes         String[]
+  expiresAt      DateTime?
+  lastUsedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  revokedAt      DateTime?
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation(fields: [createdById], references: [id])
+
+  @@index([organisationId])
+}
+
+// ---------------------------------------------------------------------------
+// Product map (per-organisation regulatory footprint)
+// ---------------------------------------------------------------------------
+
+model ProductMap {
+  id             String       @id @default(cuid())
+  organisationId String
+  name           String
+  isActive       Boolean      @default(true)
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  licences       Licence[]
+  productLines   ProductLine[]
+  jurisdictions  ProductMapJurisdiction[]
+  impactScores   ImpactScore[]
+
+  @@index([organisationId])
+}
+
+model Licence {
+  id             String       @id @default(cuid())
+  productMapId   String
+  licenceType    String        // value from taxonomy.licence_type
+  issuingAuthority String      // e.g. "bafin", "cssf"
+  licenceReference String?
+  issuedAt       DateTime?
+  expiresAt      DateTime?
+  status         LicenceStatus @default(ACTIVE)
+  notes          String?
+
+  productMap     ProductMap   @relation(fields: [productMapId], references: [id], onDelete: Cascade)
+
+  @@index([productMapId])
+  @@index([licenceType])
+}
+
+enum LicenceStatus {
+  ACTIVE
+  APPLIED
+  WITHDRAWN
+  LAPSED
+}
+
+model ProductLine {
+  id             String       @id @default(cuid())
+  productMapId   String
+  name           String
+  activities     String[]      // values from taxonomy.activity
+  customerSegment CustomerSegment[]
+  description    String?
+  isCritical     Boolean      @default(false)
+
+  productMap     ProductMap   @relation(fields: [productMapId], references: [id], onDelete: Cascade)
+
+  @@index([productMapId])
+}
+
+enum CustomerSegment {
+  RETAIL
+  PROFESSIONAL
+  ELIGIBLE_COUNTERPARTY
+  CORPORATE
+  INSTITUTIONAL
+}
+
+model ProductMapJurisdiction {
+  id             String       @id @default(cuid())
+  productMapId   String
+  jurisdictionCode String     // e.g. "eu", "de", "lu"
+  authority      String?       // e.g. "bafin"
+  isHomeMember   Boolean      @default(false)
+  isPassportedInto Boolean    @default(false)
+
+  productMap     ProductMap   @relation(fields: [productMapId], references: [id], onDelete: Cascade)
+
+  @@unique([productMapId, jurisdictionCode])
+}
+
+// ---------------------------------------------------------------------------
+// Sources and publications
+// ---------------------------------------------------------------------------
+
+model Source {
+  id             String       @id @default(cuid())
+  code           String       @unique           // e.g. "bafin", "esma"
+  displayName    String
+  jurisdictionCode String                       // "eu", "de", etc.
+  baseUrl        String
+  feedType       FeedType
+  feedUrl        String?
+  pollIntervalMin Int         @default(60)
+  language       String       @default("de")
+  isActive       Boolean      @default(true)
+  lastFetchedAt  DateTime?
+  etag           String?
+  lastModified   String?
+  cursorJson     Json?
+  adapterStatusJson Json?
+  notes          String?
+
+  publications   Publication[]
+  fetchRuns      FetchRun[]
+  diligenceRecords SourceDiligence[]
+
+  @@index([jurisdictionCode])
+}
+
+enum FeedType {
+  RSS
+  ATOM
+  HTML_SCRAPE
+  API
+  EUR_LEX_API
+  EMAIL_INGEST
+}
+
+model Publication {
+  id             String       @id @default(cuid())
+  sourceId       String
+  sourceUrl      String
+  canonicalUrl   String?
+  externalId     String?
+  title          String
+  publishedAt    DateTime?
+  fetchedAt      DateTime     @default(now())
+  language       String
+  publicationType String      // value from taxonomy.publication_type
+  rawHash        String                            // sha256 of raw content
+  bodyText       String                            @db.Text
+  bodyMarkdown   String?                           @db.Text
+  sourceMetadataJson Json?
+  pageCount      Int?
+  hasAttachments Boolean      @default(false)
+
+  source         Source       @relation(fields: [sourceId], references: [id])
+  versions       PublicationVersion[]
+  attachments    Attachment[]
+  classifications Classification[]
+  impactScores   ImpactScore[]
+  alerts         Alert[]
+  embedding      PublicationEmbedding?
+  reviewQueueItems ReviewQueueItem[]
+  paragraphs      PublicationParagraph[]
+  paragraphDiffs  ParagraphDiff[]
+  classificationRevisions ClassificationRevision[]
+
+  @@unique([sourceId, externalId])
+  @@unique([sourceUrl, rawHash])
+  @@index([publishedAt])
+  @@index([publicationType])
+}
+
+model PublicationVersion {
+  id              String       @id @default(cuid())
+  publicationId   String
+  versionNumber   Int
+  fetchedAt       DateTime     @default(now())
+  rawHash         String
+  bodyText        String       @db.Text
+  diffFromPrevious String?     @db.Text  // unified diff
+  semanticChangesJson Json?              // [{paragraphIndex, before, after, summary}]
+  changeSummary   String?      @db.Text
+
+  publication     Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  paragraphs      PublicationParagraph[]
+  paragraphDiffs  ParagraphDiff[]
+
+  @@unique([publicationId, versionNumber])
+  @@index([publicationId])
+}
+
+model Attachment {
+  id             String       @id @default(cuid())
+  publicationId  String
+  fileName       String
+  mimeType       String
+  storageUrl     String
+  sizeBytes      Int
+  extractedText  String?      @db.Text
+  extractionStatus AttachmentExtractionStatus @default(PENDING)
+  ocrRequired    Boolean      @default(false)
+  sourceUrl      String?
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@index([publicationId])
+}
+
+enum AttachmentExtractionStatus {
+  PENDING
+  EXTRACTED
+  OCR_REQUIRED
+  FAILED
+}
+
+// pgvector embedding store. Separate model to keep main row narrow.
+model PublicationEmbedding {
+  id             String       @id @default(cuid())
+  publicationId  String       @unique
+  model          String                                   // e.g. "voyage-3-large"
+  dim            Int
+  vector         Unsupported("vector(1536)")
+  createdAt      DateTime     @default(now())
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Classification
+// ---------------------------------------------------------------------------
+
+model TaxonomyVersion {
+  id             String       @id @default(cuid())
+  version        String       @unique        // e.g. "2026.05.20"
+  yamlContent    String       @db.Text
+  activatedAt    DateTime     @default(now())
+  notes          String?
+
+  classifications Classification[]
+}
+
+model Classification {
+  id             String       @id @default(cuid())
+  publicationId  String
+  taxonomyVersionId String
+  regulationFamilies String[]                 // values from taxonomy.regulation_family
+  subTopics      String[]                     // sub_topics within families
+  activities     String[]                     // values from taxonomy.activity
+  licenceTypes   String[]                     // values from taxonomy.licence_type
+  topicPaths     String[]                     // dotted paths e.g. "ict_and_resilience.incident_reporting"
+  jurisdictions  String[]                     // values from taxonomy.jurisdiction
+  summary        String       @db.Text
+  whatChanged    String?      @db.Text
+  whoIsAffected  String?      @db.Text
+  deadline       DateTime?
+  recommendedAction String?   @db.Text
+  serviceOfferingIds String[]
+  classifierModel String
+  classifierVersion String
+  confidence     Float
+  reviewedByHuman Boolean     @default(false)
+  reviewedById   String?
+  createdAt      DateTime     @default(now())
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  taxonomyVersion TaxonomyVersion @relation(fields: [taxonomyVersionId], references: [id])
+  revisions      ClassificationRevision[]
+
+  @@unique([publicationId, taxonomyVersionId])
+  @@index([deadline])
+}
+
+// ---------------------------------------------------------------------------
+// Review and correction history
+// ---------------------------------------------------------------------------
+
+model ReviewQueueItem {
+  id             String       @id @default(cuid())
+  publicationId  String       @unique
+  status         ReviewStatus @default(PENDING)
+  priority       Int          @default(50)
+  assignedToUserId String?
+  reviewerName   String?
+  decisionReason String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  decidedAt      DateTime?
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@index([status, priority])
+  @@index([updatedAt])
+}
+
+enum ReviewStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  NEEDS_CHANGES
+  FALSE_POSITIVE
+  ARCHIVED
+}
+
+model ClassificationRevision {
+  id             String       @id @default(cuid())
+  publicationId  String
+  classificationId String?
+  beforeJson     Json
+  afterJson      Json
+  reason         String       @db.Text
+  reviewerName   String
+  createdAt      DateTime     @default(now())
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  classification Classification? @relation(fields: [classificationId], references: [id], onDelete: SetNull)
+
+  @@index([publicationId, createdAt])
+}
+
+model PublicationParagraph {
+  id             String       @id @default(cuid())
+  publicationId  String
+  publicationVersionId String
+  paragraphIndex Int
+  contentHash    String
+  bodyText       String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  publicationVersion PublicationVersion @relation(fields: [publicationVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([publicationVersionId, paragraphIndex])
+  @@index([publicationId, contentHash])
+}
+
+model ParagraphDiff {
+  id             String       @id @default(cuid())
+  publicationId  String
+  publicationVersionId String
+  paragraphIndex Int
+  changeType     ParagraphDiffType
+  beforeHash     String?
+  afterHash      String?
+  beforeText     String?      @db.Text
+  afterText      String?      @db.Text
+  unifiedDiff    String?      @db.Text
+  semanticSummary String?     @db.Text
+  createdAt      DateTime     @default(now())
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  publicationVersion PublicationVersion @relation(fields: [publicationVersionId], references: [id], onDelete: Cascade)
+
+  @@index([publicationId, createdAt])
+  @@index([publicationVersionId])
+}
+
+enum ParagraphDiffType {
+  ADDED
+  REMOVED
+  CHANGED
+  UNCHANGED
+}
+
+// ---------------------------------------------------------------------------
+// Impact scoring per organisation and product map
+// ---------------------------------------------------------------------------
+
+model ImpactScore {
+  id             String       @id @default(cuid())
+  publicationId  String
+  organisationId String
+  productMapId   String
+  score          Float                          // 0..100
+  bucket         ImpactBucket
+  rationale      String       @db.Text
+  matchedLicences String[]
+  matchedActivities String[]
+  matchedJurisdictions String[]
+  ruleVersion    String
+  scoredAt       DateTime     @default(now())
+
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  productMap     ProductMap   @relation(fields: [productMapId], references: [id], onDelete: Cascade)
+
+  @@unique([publicationId, productMapId])
+  @@index([organisationId, scoredAt])
+  @@index([bucket])
+}
+
+enum ImpactBucket {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  NONE
+}
+
+// ---------------------------------------------------------------------------
+// Alerts and delivery
+// ---------------------------------------------------------------------------
+
+model Alert {
+  id             String       @id @default(cuid())
+  organisationId String
+  publicationId  String
+  impactScoreId  String?
+  channel        AlertChannel
+  status         AlertStatus  @default(DRAFT)
+  scheduledFor   DateTime
+  approvedAt     DateTime?
+  approvedById   String?
+  approvedByName String?
+  targetMetadataJson Json?
+  sentAt         DateTime?
+  payloadJson    Json
+  errorMessage   String?
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  publication    Publication  @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  reads          AlertRead[]
+  deliveryAttempts DeliveryAttempt[]
+
+  @@index([organisationId, status])
+  @@index([scheduledFor])
+}
+
+enum AlertChannel {
+  EMAIL_REALTIME
+  EMAIL_DIGEST_DAILY
+  EMAIL_DIGEST_WEEKLY
+  SLACK
+  MS_TEAMS
+  HUBSPOT
+  WEBHOOK
+  IN_APP
+}
+
+enum AlertStatus {
+  DRAFT
+  APPROVED
+  BLOCKED_BY_CONFIG
+  SENDING
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model AlertRead {
+  id             String       @id @default(cuid())
+  alertId        String
+  userId         String
+  readAt         DateTime     @default(now())
+
+  alert          Alert        @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([alertId, userId])
+}
+
+model DeliveryAttempt {
+  id             String       @id @default(cuid())
+  alertId        String
+  provider       IntegrationProvider
+  status         DeliveryAttemptStatus @default(PENDING)
+  requestJson    Json?
+  responseJson   Json?
+  errorMessage   String?      @db.Text
+  attemptedAt    DateTime     @default(now())
+
+  alert          Alert        @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([alertId, attemptedAt])
+  @@index([provider, status])
+}
+
+enum DeliveryAttemptStatus {
+  PENDING
+  SENT
+  FAILED
+  BLOCKED_BY_CONFIG
+}
+
+// ---------------------------------------------------------------------------
+// Service offering catalogue and lead routing
+// ---------------------------------------------------------------------------
+
+model ServiceOffering {
+  id             String       @id              // matches taxonomy.service_offerings.id
+  name           String
+  description    String       @db.Text
+  priceIndication String
+  calendlyUrl    String?
+  hubspotDealStage String?
+  isActive       Boolean      @default(true)
+
+  leads          ServiceLead[]
+  rules          ServiceOfferingRule[]
+}
+
+model ServiceOfferingRule {
+  id             String       @id @default(cuid())
+  serviceOfferingId String
+  axis           ServiceOfferingRuleAxis
+  values         String[]
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  serviceOffering ServiceOffering @relation(fields: [serviceOfferingId], references: [id], onDelete: Cascade)
+
+  @@index([serviceOfferingId, isActive])
+}
+
+enum ServiceOfferingRuleAxis {
+  REGULATION_FAMILY
+  ACTIVITY
+  LICENCE_TYPE
+  TOPIC
+  JURISDICTION
+}
+
+model ServiceLead {
+  id             String       @id @default(cuid())
+  organisationId String
+  serviceOfferingId String
+  publicationId  String?
+  source         LeadSource
+  status         LeadStatus   @default(NEW)
+  hubspotDealId  String?      @unique
+  estimatedValueEur Decimal?  @db.Decimal(12, 2)
+  closedValueEur Decimal?     @db.Decimal(12, 2)
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now())
+  closedAt       DateTime?
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  serviceOffering ServiceOffering @relation(fields: [serviceOfferingId], references: [id])
+
+  @@index([organisationId, status])
+}
+
+enum LeadSource {
+  ALERT_CTA
+  DASHBOARD_CTA
+  EMAIL_DIGEST_CTA
+  SALES_DIRECT
+  EVENT
+  NEWSLETTER
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  PROPOSAL_SENT
+  WON
+  LOST
+  WITHDRAWN
+}
+
+// ---------------------------------------------------------------------------
+// Ingestion bookkeeping
+// ---------------------------------------------------------------------------
+
+model FetchRun {
+  id             String       @id @default(cuid())
+  sourceId       String
+  startedAt      DateTime     @default(now())
+  finishedAt     DateTime?
+  status         FetchStatus  @default(RUNNING)
+  publicationsSeen Int        @default(0)
+  publicationsNew Int         @default(0)
+  publicationsUpdated Int     @default(0)
+  errorMessage   String?      @db.Text
+
+  source         Source       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, startedAt])
+}
+
+enum FetchStatus {
+  RUNNING
+  OK
+  PARTIAL
+  SKIPPED
+  FAILED
+}
+
+model SourceDiligence {
+  id             String       @id @default(cuid())
+  sourceId       String       @unique
+  reuseStatus    SourceReuseStatus @default(UNKNOWN)
+  attributionRequirement String? @db.Text
+  robotsNotes    String?      @db.Text
+  allowedCadenceMin Int?
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime?
+  ownerNotes     String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  source         Source       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([reuseStatus])
+  @@index([nextReviewAt])
+}
+
+enum SourceReuseStatus {
+  UNKNOWN
+  REUSE_PERMITTED
+  ATTRIBUTION_REQUIRED
+  REVIEW_REQUIRED
+  RESTRICTED
+}
+
+model SavedView {
+  id             String       @id @default(cuid())
+  organisationId String?
+  name           String
+  description    String?
+  filtersJson    Json
+  isDefault      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, isDefault])
+}
+
+model IntegrationConfig {
+  id             String       @id @default(cuid())
+  organisationId String?
+  provider       IntegrationProvider
+  displayName    String
+  status         IntegrationStatus @default(DISABLED)
+  nonSecretConfigJson Json?
+  lastHealthCheckAt DateTime?
+  lastHealthMessage String?   @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([organisationId, provider])
+  @@index([provider, status])
+}
+
+enum IntegrationProvider {
+  RESEND
+  SLACK
+  MS_TEAMS
+  HUBSPOT
+}
+
+enum IntegrationStatus {
+  ENABLED
+  DISABLED
+  MISCONFIGURED
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  actorUserId    String?
+  organisationId String?
+  action         String
+  entityType     String
+  entityId       String
+  payloadJson    Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([entityType, entityId])
+  @@index([organisationId, createdAt])
+}
