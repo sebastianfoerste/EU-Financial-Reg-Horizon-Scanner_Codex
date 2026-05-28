@@ -5,7 +5,8 @@ import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { requireInternalOperator } from "@/lib/authz";
 import { listReviewQueue } from "@/lib/review";
-import { compactDate } from "@/lib/utils";
+import { summarizeReviewReadiness } from "@/lib/review-readiness";
+import { cn, compactDateTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -40,34 +41,47 @@ export default async function ReviewPage() {
             </div>
           </div>
           <div className="divide-y divide-zinc-200">
-            {items.map((item) => (
-              <article key={item.id} className="grid gap-4 p-4 md:grid-cols-[1fr_auto]">
-                <div>
-                  <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                    <span className="font-semibold uppercase text-zinc-700">{item.publication.sourceCode}</span>
-                    <span>{item.publication.publicationType}</span>
-                    <span>{item.status}</span>
-                    <span>Updated {compactDate(item.updatedAt)}</span>
+            {items.map((item) => {
+              const readiness = summarizeReviewReadiness(item);
+              return (
+                <article key={item.id} className="grid gap-4 p-4 md:grid-cols-[1fr_auto]">
+                  <div>
+                    <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                      <span className="font-semibold uppercase text-zinc-700">{item.publication.sourceCode}</span>
+                      <span>{item.publication.publicationType}</span>
+                      <span>{item.status}</span>
+                      <span>Updated {compactDateTime(item.updatedAt)}</span>
+                      <span
+                        className={cn(
+                          "inline-flex h-6 items-center rounded-md border px-2 font-semibold",
+                          readiness.readyForAlertDraft
+                            ? "border-teal-200 bg-teal-50 text-teal-800"
+                            : "border-red-200 bg-red-50 text-red-800",
+                        )}
+                      >
+                        {readiness.readyForAlertDraft ? "Ready" : `${readiness.blockingCount} blocker${readiness.blockingCount === 1 ? "" : "s"}`}
+                      </span>
+                    </div>
+                    <Link href={`/review/${item.publicationId}`} className="text-sm font-semibold text-zinc-950">
+                      {item.publication.title}
+                    </Link>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">
+                      {item.publication.summary}
+                    </p>
                   </div>
-                  <Link href={`/review/${item.publicationId}`} className="text-sm font-semibold text-zinc-950">
-                    {item.publication.title}
-                  </Link>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">
-                    {item.publication.summary}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 md:justify-end">
-                  <StatusBadge bucket={item.publication.impactBucket} score={item.publication.impactScore} />
-                  <Link
-                    href={`/review/${item.publicationId}`}
-                    className="inline-flex h-9 items-center justify-center rounded-md border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
-                    aria-label={`Review ${item.publication.title}`}
-                  >
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </div>
-              </article>
-            ))}
+                  <div className="flex items-center gap-3 md:justify-end">
+                    <StatusBadge bucket={item.publication.impactBucket} score={item.publication.impactScore} />
+                    <Link
+                      href={`/review/${item.publicationId}`}
+                      className="inline-flex h-9 items-center justify-center rounded-md border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+                      aria-label={`Review ${item.publication.title}`}
+                    >
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       </div>
