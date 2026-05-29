@@ -4,6 +4,8 @@ MVP foundation for a regulatory horizon-scanning workflow focused on EU crypto, 
 
 The current working slice ingests Tier 1 public regulator sources, normalises publications, stores version history, classifies against the delivered taxonomy, scores publications against local product maps, routes items through human review, prepares approved alert drafts, and keeps delivery behind explicit reviewed sends. Classification uses deterministic rules by default and can use structured AI Gateway output for public publication text after explicit configuration. Product maps maintain local concern watchlists, multiple licences, product lines, jurisdictions, quarterly footprint confirmation, and auditable score recalculation. Stored score explanations retain topic, home-state, passporting, critical-line and score-floor components. Score-affecting footprint edits retire pending alert drafts until the edited footprint is confirmed again. Reviewers can rerun classification, correct tags, deadlines, confidence, summaries, and service routing, with correction history and score recalculation. Governed service-package updates invalidate pending alert drafts and flow into newly generated payloads. Client product maps stay local. No legal, client, recruiting, or public communications are sent automatically.
 
+For a reviewer-friendly demo path, architecture map, checks and safety posture, see [`docs/launch-readiness.md`](docs/launch-readiness.md).
+
 ## Stack
 
 - Next.js 16 App Router, React 19, TypeScript
@@ -65,6 +67,7 @@ Review decisions, service catalogue governance, source diligence edits, and manu
 - `src/lib/review.ts`: internal review state transitions, validated corrections, correction history, and alert invalidation after revised classifications.
 - `src/lib/alerts.ts` and `src/lib/delivery.ts`: alert draft generation, approval, and reviewed delivery attempts.
 - `src/app`: dashboard, review queue, alert cockpit, service catalogue, source diligence, audit log, diagnostics, publication detail, digest preview, source registry, and API routes.
+- `docs/launch-readiness.md`: reviewer runbook for demo path, checks, architecture and safety posture.
 - `docs/launch/launch-post.md`: launch asset, stored as a draft.
 - `docs/BACKLOG.md`: later 12-month features deliberately left outside this MVP pass.
 
