@@ -1,8 +1,10 @@
 # EU Financial Reg Horizon Scanner
 
-MVP foundation for a regulatory horizon-scanning workflow focused on EU crypto, payments, digital assets, and prudential supervision.
+EU Financial Reg Horizon Scanner is a working slice of a regulatory horizon-scanning workflow for EU crypto, payments, digital assets and prudential supervision.
 
-The current working slice ingests Tier 1 public regulator sources, normalises publications, stores version history, classifies against the delivered taxonomy, scores publications against local product maps, routes items through human review, prepares approved alert drafts, and keeps delivery behind explicit reviewed sends. Classification uses deterministic rules by default and can use structured AI Gateway output for public publication text after explicit configuration. Product maps maintain local concern watchlists, multiple licences, product lines, jurisdictions, quarterly footprint confirmation, and auditable score recalculation. Stored score explanations retain topic, home-state, passporting, critical-line and score-floor components. Score-affecting footprint edits retire pending alert drafts until the edited footprint is confirmed again. Reviewers can rerun classification, correct tags, deadlines, confidence, summaries, and service routing, with correction history and score recalculation. Governed service-package updates invalidate pending alert drafts and flow into newly generated payloads. A bounded agent layer now creates source-monitoring findings, review QA suggestions, classification triage drafts, diff explanations, impact explanations, alert draft previews, service-routing suggestions, audit QA findings, and internal briefing artifacts. The law-firm mode maps publications to clients, practice groups, matters, brief drafts, knowledge assets, ethical walls, and fixed-fee opportunity routing for Kirkland & Ellis style, YPOG style, and Annerton style workflows. Client product maps and matter facts stay local. No legal, client, recruiting, or public communications are sent automatically.
+It ingests Tier 1 public regulator sources, normalises and version-controls publications, classifies them against a delivered taxonomy, scores them against local product maps, and routes items through human review before any alert is sent.
+
+Classification is deterministic by default and can use structured AI Gateway output for public publication text after explicit configuration. No alert reaches an external channel without a reviewer approving it.
 
 For a reviewer-friendly demo path, architecture map, checks and safety posture, see [`docs/launch-readiness.md`](docs/launch-readiness.md).
 
@@ -12,11 +14,10 @@ For a reviewer-friendly demo path, architecture map, checks and safety posture, 
 - Prisma with Postgres, `pgvector`, and `pg_trgm`
 - Inngest for scheduled source polling and dry-run digest jobs
 - Clerk-ready auth, optional in local demo mode
-- Clerk organisation mapping and internal-operator gating for firm-governed screens
-- Resend, Slack, Teams, and explicit HubSpot lead/deal delivery behind reviewed send buttons
-- Config-backed workflow agents with Prisma run ledgers, artifact review states, Inngest triggers, and default-deny capabilities
-- Law-firm operating layer for matter-led regulatory intelligence, client brief drafts, playbooks, ethical walls, and commercial opportunity routing
-- Vitest for taxonomy, service-routing, ingestion, review, paragraph diffing, extraction, delivery blocking, saved views, diligence, law-firm matching, and scoring tests
+- Clerk organisation mapping and internal-operator gating for governed review screens
+- Resend, Slack and Teams delivery behind reviewed send buttons
+- Config-backed workflow agents with Prisma run ledgers, artifact review states, Inngest triggers and default-deny capabilities
+- Vitest for taxonomy, service-routing, ingestion, review, paragraph diffing, extraction, delivery blocking, saved views, diligence and scoring tests
 
 ## Quick Start
 
@@ -70,11 +71,8 @@ Review decisions, service catalogue governance, source diligence edits, and manu
 - `src/lib/review.ts`: internal review state transitions, validated corrections, correction history, and alert invalidation after revised classifications.
 - `src/lib/alerts.ts` and `src/lib/delivery.ts`: alert draft generation, approval, and reviewed delivery attempts.
 - `src/lib/agents`: agent registry loading, policy checks, deterministic implementations, run persistence, artifacts, and review status updates.
-- `src/lib/law-firm.ts`: deterministic law-firm matter matching, implementation plans, workbench data, brief drafting, and reviewed brief status changes.
-- `src/app`: dashboard, law-firm workbench, agent control room, review queue, alert cockpit, service catalogue, source diligence, audit log, diagnostics, publication detail, digest preview, source registry, and API routes.
+- `src/app`: dashboard, agent control room, review queue, alert cockpit, service catalogue, source diligence, audit log, diagnostics, publication detail, digest preview, source registry, and API routes.
 - `docs/launch-readiness.md`: reviewer runbook for demo path, checks, architecture and safety posture.
-- `docs/LAW_FIRM_MODE_PLAN.md`: detailed implementation plan for Kirkland & Ellis style, YPOG style, and Annerton style law-firm workflows.
-- `docs/launch/launch-post.md`: launch asset, stored as a draft.
 - `docs/BACKLOG.md`: later 12-month features deliberately left outside this MVP pass.
 
 ## Source References
