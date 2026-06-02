@@ -6,8 +6,6 @@ It ingests Tier 1 public regulator sources, normalises and version-controls publ
 
 Classification is deterministic by default and can use structured AI Gateway output for public publication text after explicit configuration. No alert reaches an external channel without a reviewer approving it.
 
-For a reviewer-friendly demo path, architecture map, checks and safety posture, see [`docs/launch-readiness.md`](docs/launch-readiness.md).
-
 ## Stack
 
 - Next.js 16 App Router, React 19, TypeScript
@@ -72,7 +70,6 @@ Review decisions, service catalogue governance, source diligence edits, and manu
 - `src/lib/alerts.ts` and `src/lib/delivery.ts`: alert draft generation, approval, and reviewed delivery attempts.
 - `src/lib/agents`: agent registry loading, policy checks, deterministic implementations, run persistence, artifacts, and review status updates.
 - `src/app`: dashboard, agent control room, review queue, alert cockpit, service catalogue, source diligence, audit log, diagnostics, publication detail, digest preview, source registry, and API routes.
-- `docs/launch-readiness.md`: reviewer runbook for demo path, checks, architecture and safety posture.
 - `docs/BACKLOG.md`: later 12-month features deliberately left outside this MVP pass.
 
 ## Source References
