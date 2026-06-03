@@ -1,6 +1,6 @@
 # EU Financial Reg Horizon Scanner
 
-EU Financial Reg Horizon Scanner is a working slice of a regulatory horizon-scanning workflow for EU crypto, payments, digital assets and prudential supervision.
+EU Financial Reg Horizon Scanner is a working slice of a source-verified regulatory horizon-scanning workflow. The worked domain is EU crypto, payments, digital assets and prudential supervision. The transferable pattern is monitoring emerging AI regulation: source ingestion, classification, impact scoring, reviewer queues and approved delivery.
 
 It ingests Tier 1 public regulator sources, normalises and version-controls publications, classifies them against a delivered taxonomy, scores them against local product maps, and routes items through human review before any alert is sent.
 
@@ -58,62 +58,24 @@ Review decisions, service catalogue governance, source diligence edits, and manu
 
 ## Main Paths
 
-- `config/taxonomy.yaml`: versioned taxonomy and service-offering triggers.
-- `config/scoring-rules.yaml`: versioned deterministic impact-scoring rules.
-- `config/agents.yaml`: versioned agent registry, capabilities, schedules, LLM policy, and budgets.
-- `prisma/schema.prisma`: delivered schema plus adapter state and tenant access fields.
-- `prisma.config.ts`: Prisma schema, migration, seed, and datasource configuration.
-- `src/lib/ingestion`: source adapters, diligence-gated polling, RSS parsing, detail extraction, paragraph versioning, and persistence.
-- `src/lib/impact-scoring.ts`: local product-map scoring, no LLM calls.
-- `src/lib/ai/classification.ts`: publication-only deterministic classifier and optional AI Gateway structured-output execution.
-- `src/lib/review.ts`: internal review state transitions, validated corrections, correction history, and alert invalidation after revised classifications.
-- `src/lib/alerts.ts` and `src/lib/delivery.ts`: alert draft generation, approval, and reviewed delivery attempts.
-- `src/lib/agents`: agent registry loading, policy checks, deterministic implementations, run persistence, artifacts, and review status updates.
-- `src/app`: dashboard, agent control room, review queue, alert cockpit, service catalogue, source diligence, audit log, diagnostics, publication detail, digest preview, source registry, and API routes.
-- `docs/BACKLOG.md`: later 12-month features deliberately left outside this MVP pass.
+- `/` overview dashboard
+- `/sources` regulator source catalogue and diligence fields
+- `/publications` publication list, classification state, review routing and detail pages
+- `/saved-views` monitored queries and alert rules
+- `/product-map` product and service impact scoring setup
+- `/review` reviewer queue
+- `/ingestion` manual source polling and Inngest dry-run diagnostics
+- `/settings` integration and organisation controls
 
-## Source References
+## Safety Principles
 
-- BaFin RSS discovery: https://www.bafin.de/EN/Service/TopNavigation/RSS/rss_artikel_en.html
-- ESMA RSS and Q&A search: https://www.esma.europa.eu/rss.xml and https://www.esma.europa.eu/esma-qa-search-page/all
-- EBA RSS and Single Rulebook Q&A: https://www.eba.europa.eu/news-press/news/rss.xml and https://www.eba.europa.eu/single-rulebook-qa
-- EUR-Lex reuse and Cellar access: https://eur-lex.europa.eu/content/help/data-reuse/reuse-contents-eurlex-details.html?locale=en
-- Bundesbank RSS discovery: https://www.bundesbank.de/de/startseite/rss
+- Public sources only.
+- Deterministic classification first.
+- Explicit configuration before AI use.
+- Human review before delivery.
+- Tenant-scoped access when auth is configured.
+- Synthetic demo data only.
 
-## Safety Defaults
+## License
 
-- Email, Slack and Teams delivery remain blocked until a human approves an alert draft and presses the reviewed send action.
-- Alert sends atomically claim an approved draft, preventing duplicate delivery attempts from concurrent clicks.
-- Reviewer attribution for persisted decisions and approvals is taken from the authenticated operator identity.
-- Configured Postgres reads fail visibly on error and never substitute sample client records.
-- Secrets stay in environment variables. Postgres stores only non-secret integration metadata.
-- The classifier sends only public regulator publication text to AI Gateway when `HORIZON_AI_PROVIDER="gateway"`, a model is selected, and gateway authentication is configured.
-- Agents are disabled by default in production through `HORIZON_AGENTS_ENABLED`, scheduled autorun is disabled unless `HORIZON_AGENT_AUTORUN_ENABLED="true"`, and agent LLM calls require `HORIZON_AGENT_LLM_ENABLED="true"`.
-- Agent LLM use is publication-only in this pass. Product-map and client facts are either kept local or redacted before any future local-fact policy is introduced.
-- Agent artifacts are drafts or findings. Approved alert-draft artifacts can be applied only as in-app draft alerts. Existing alert approval and explicit-send actions remain the only route to external delivery.
-- Reviewer-triggered classification reruns return the publication to pending review and retire related pending alert drafts.
-- Product-map impact scoring is deterministic and local in this pass.
-- Product-map edits are organisation-scoped, audit logged, and immediately recalculate the persisted explanation breakdown.
-- Alert generation and reviewed send require current quarterly confirmation for every active product map in the organisation.
-- Live polling honours source reuse status and allowed cadence; sources awaiting diligence remain blocked.
-- Production mode denies an unconfigured authenticated app. Read-only demo rendering is available only when explicitly permitted with `HORIZON_ALLOW_DEMO_MODE="true"` and no database is configured.
-- External publishing, billing, Neo4j and fine-tuning remain out of scope for this pilot-ready core.
-
-## System Disclaimers & Regulatory Compliance
-
-### 1. Controlled AI Architecture
-
-This system is structured as a controlled regulatory-intelligence workflow. Deterministic classification, scoring and review routing are the default. LLM use is optional, configuration-gated and limited to public regulator publication text in this pilot-ready core.
-
-### 2. Operational Limits
-
-- **Accuracy Constraints**: Output generation and classification may be incomplete, stale or incorrect and require reviewer validation.
-- **Data Latency**: Source ingestion and local database states are updated periodically and do not reflect real-time regulatory or institutional shifts.
-
-### 3. Mandatory Human-in-the-Loop Review
-
-**CRITICAL**: Under no circumstances should any raw output, regulatory summary, alert draft or operational recommendation be sent, published, finalized or relied on without thorough human validation. The operator retains sole responsibility for reviewing and verifying the accuracy and appropriateness of all generated artifacts.
-
-### 4. No Legal Advice Framing
-
-**This software does not provide legal representation or binding legal counsel.** All synthesized analyses, regulatory scans and case triage scores are for administrative automation and operational assistance only. This tool is not a licensed attorney, does not operate as a law firm, and does not establish any attorney-client relationship. Operators must consult qualified legal professionals for binding advice or representation.
+MIT. See [LICENSE](LICENSE).
